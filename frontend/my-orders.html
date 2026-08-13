@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - WrapIt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f5576c 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .order-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid #f5576c; }
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .order-id { font-size: 0.8em; color: #888; }
+        .status { padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d4edda; color: #155724; }
+        .shop-name { font-weight: bold; font-size: 1.1em; color: #333; }
+        .service-name { color: #666; margin: 5px 0; }
+        .total { font-weight: bold; color: #f5576c; text-align: right; }
+        .no-orders { text-align: center; padding: 50px; color: #888; }
+        .back-btn { background: white; color: #f5576c; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 My Orders</h1>
+            <a href="index.html" class="back-btn">Home</a>
+        </div>
+
+        <div id="ordersList">
+            <p style="text-align: center;">Loading your orders...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+
+        async function fetchOrders() {
+            if (!token) {
+                document.getElementById('ordersList').innerHTML = '<div class="no-orders">Please <a href="login.html">Login</a> to see your orders.</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/orders/my-orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.orders.length > 0) {
+                    const list = document.getElementById('ordersList');
+                    list.innerHTML = data.orders.map(order => `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-id">#${order.orderNumber}</span>
+                                <span class="status status-${order.status}">${order.status}</span>
+                            </div>
+                            <div class="shop-name">${order.shop ? order.shop.name : 'Unknown Shop'}</div>
+                            <div class="service-name">${order.service.name}</div>
+                            <div class="total">AED ${order.pricing.total}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('ordersList').innerHTML = '<div class="no-orders">No orders found yet. Time to wrap some gifts!</div>';
+                }
+            } catch (err) {
+                document.getElementById('ordersList').innerHTML = '<div class="no-orders">Error loading orders.</div>';
+            }
+        }
+
+        fetchOrders();
+    </script>
+</body>
+</html>

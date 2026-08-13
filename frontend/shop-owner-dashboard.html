@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Dashboard - WrapIt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header h1 { color: #f5576c; font-size: 1.8em; }
+        .logout-btn { background: #f5576c; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-box { background: white; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 2em; font-weight: 700; color: #f5576c; }
+        .stat-label { color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; }
+
+        .order-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 6px solid #f5576c; }
+        .order-info h3 { color: #333; margin-bottom: 5px; }
+        .order-info p { color: #666; font-size: 0.9em; }
+        .order-status { padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; background: #fff3cd; color: #856404; }
+        .complete-btn { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .complete-btn:hover { background: #219150; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Shop Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box"><div class="stat-val" id="totalCount">0</div><div class="stat-label">Total Orders</div></div>
+            <div class="stat-box"><div class="stat-val" id="pendingCount">0</div><div class="stat-label">Pending</div></div>
+            <div class="stat-box"><div class="stat-val" id="totalRev">0</div><div class="stat-label">Revenue (AED)</div></div>
+        </div>
+
+        <h2 style="margin-bottom: 15px; color: #f5576c;">Active Orders</h2>
+        <div id="ordersList">
+            <!-- Orders will load here -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+
+        async function loadDashboard() {
+            if (!token) { window.location.href = 'login.html'; return; }
+            try {
+                const res = await fetch(`${API_URL}/orders/shop-orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    renderOrders(data.orders);
+                }
+            } catch (err) { console.error("Error:", err); }
+        }
+
+        function renderOrders(orders) {
+            const list = document.getElementById('ordersList');
+            let pending = 0; let revenue = 0;
+            
+            if (orders.length === 0) {
+                list.innerHTML = "<p style='text-align:center; padding:20px;'>No orders yet!</p>";
+                return;
+            }
+
+            list.innerHTML = orders.map(order => {
+                if (order.status === 'pending') pending++;
+                revenue += order.pricing.total;
+                return `
+                    <div class="order-card">
+                        <div class="order-info">
+                            <h3>#${order.orderNumber.slice(-6)}</h3>
+                            <p><strong>Service:</strong> ${order.service.name}</p>
+                            <p><strong>Customer ID:</strong> ${order.customer.name || order.customer}</p>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="margin-bottom:10px"><span class="order-status">${order.status}</span></div>
+                            ${order.status === 'pending' ? `<button class="complete-btn" onclick="markComplete('${order._id}')">Done</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('totalCount').innerText = orders.length;
+            document.getElementById('pendingCount').innerText = pending;
+            document.getElementById('totalRev').innerText = revenue;
+        }
+
+        async function markComplete(orderId) {
+            try {
+                await fetch(`${API_URL}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: 'completed' })
+                });
+                loadDashboard(); // Refresh
+            } catch (err) { alert("Failed to update"); }
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

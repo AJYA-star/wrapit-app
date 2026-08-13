@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6C63FF">
+    <title>Browse Shops - WrapIt</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+        font-family: 'Montserrat', sans-serif; 
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        min-height: 100vh;
+        padding: 20px; 
+    }
+    .header { 
+        background: white;
+        color: #f5576c; 
+        padding: 25px; 
+        border-radius: 20px; 
+        margin-bottom: 25px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between;
+        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.15);
+    }
+    .header h1 { 
+        font-size: 2em; 
+        font-weight: 700;
+    }
+    .back-btn { 
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white; 
+        border: none; 
+        padding: 12px 24px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+        transition: 0.3s;
+    }
+    .back-btn:hover { 
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+    }
+    .search-box { margin-bottom: 25px; }
+    .search-box input { 
+        width: 100%; 
+        padding: 16px; 
+        border: 2px solid #f5576c40; 
+        border-radius: 15px; 
+        font-size: 1em;
+        background: white;
+        box-shadow: 0 5px 20px rgba(245, 87, 108, 0.1);
+        transition: 0.3s;
+    }
+    .search-box input:focus {
+        outline: none;
+        border-color: #f5576c;
+        box-shadow: 0 5px 25px rgba(245, 87, 108, 0.2);
+    }
+    .shops-container { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+        gap: 25px; 
+    }
+    .shop-card { 
+        background: white; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        cursor: pointer; 
+        transition: 0.3s; 
+    }
+    .shop-card:hover { 
+        transform: translateY(-8px); 
+        box-shadow: 0 15px 40px rgba(245, 87
+   
+
+</head>
+<body>
+    <div class="header">
+        <h1>🎁 Browse Shops</h1>
+        <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search shops by name or city..." onkeyup="filterShops()">
+    </div>
+
+    <div id="loadingMessage" class="loading">Loading shops...</div>
+    <div id="shopsContainer" class="shops-container"></div>
+
+    <script>
+        let allShops = [];
+        const API_URL = 'http://localhost:5000/api';
+
+        async function loadShops() {
+            try {
+                const response = await fetch(`${API_URL}/shops`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allShops = data.shops;
+                    displayShops(allShops);
+                } else {
+                    showError('Failed to load shops');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Could not connect to server. Make sure backend is running!');
+            }
+        }
+
+        function displayShops(shops) {
+        container.innerHTML = shops.map(shop => `
+    <div class="shop-card" onclick="goToShopDetail('${shop._id}')">
+        <div class="shop-image" style="background-image: url('https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=400&q=80'); background-size: cover;">
+        </div>
+        <div class="shop-info">
+            <div class="shop-name">${shop.name}</div>
+            <div class="shop-rating">
+                <span style="color:#fab1a0">★</span> ${shop.rating.average || '5.0'} 
+                <span style="color:#b2bec3; font-size:0.8em;">(${shop.rating.count || 0} reviews)</span>
+            </div>
+            <div class="shop-price">Starting from <span style="color:#2d3436">AED ${shop.services[0]?.price || '25'}</span></div>
+        </div>
+    </div>
+`).join('');
+        }
+
+        function filterShops() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allShops.filter(shop => 
+                shop.name.toLowerCase().includes(searchTerm) ||
+                shop.address.city.toLowerCase().includes(searchTerm)
+            );
+            displayShops(filtered);
+        }
+
+        function goToShopDetail(shopId) {
+            localStorage.setItem('selectedShopId', shopId);
+            window.location.href = 'shop-detail.html';
+        }
+
+        function showError(message) {
+            const container = document.getElementById('shopsContainer');
+            const loading = document.getElementById('loadingMessage');
+            loading.style.display = 'none';
+            container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: red;">${message}</p>`;
+        }
+
+        // Load shops when page loads
+        loadShops();
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+</body>
+</html>
+

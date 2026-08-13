@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Details - WrapIt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; bbackground: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333; }
+        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px 20px; text-align: center; }
+        .container { max-width: 600px; margin: -30px auto 20px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); }
+        .back-link { color: white; text-decoration: none; font-weight: bold; display: block; margin-bottom: 10px; }
+        .shop-name { font-size: 2em; margin-bottom: 10px; color: #333; }
+        .description { color: #666; margin-bottom: 20px; line-height: 1.6; }
+        .section-title { font-size: 1.2em; font-weight: bold; margin: 20px 0 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+        .service-card { border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .service-card:hover { border-color: #667eea; background: #fcfcff; }
+        .price { font-weight: bold; color: #f5576c; font-size: 1.2em; }
+        .book-btn { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .book-btn:hover { background: #764ba2; }
+        .contact-info { font-size: 0.9em; color: #888; margin-top: 20px; }
+    </style>
+
+</head>
+<body>
+    <div class="header">
+        <a href="shops.html" class="back-link">← Back to Shops</a>
+        <h1 id="shopTitle">Loading Shop...</h1>
+    </div>
+
+    <div class="container">
+        <p id="shopDescription" class="description"></p>
+        
+        <div class="section-title">Our Services</div>
+        <div id="servicesList">
+            <!-- Services will appear here -->
+        </div>
+
+        <div class="contact-info">
+            <p id="shopAddress"></p>
+            <p id="shopPhone"></p>
+        </div>
+    </div>
+
+    <script>
+        const shopId = localStorage.getItem('selectedShopId');
+        const API_URL = 'http://localhost:5000/api';
+
+        async function fetchShopDetails() {
+            try {
+                const response = await fetch(`${API_URL}/shops/${shopId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const shop = data.shop;
+                    document.getElementById('shopTitle').textContent = shop.name;
+                    document.getElementById('shopDescription').textContent = shop.description;
+                    document.getElementById('shopAddress').textContent = `📍 ${shop.address.street}, ${shop.address.city}`;
+                    document.getElementById('shopPhone').textContent = `📞 ${shop.phone}`;
+
+                    const servicesContainer = document.getElementById('servicesList');
+                    servicesContainer.innerHTML = shop.services.map(ser => `
+                        <div class="service-card">
+                            <div>
+                                <div style="font-weight:bold">${ser.name}</div>
+                                <div style="font-size:0.8em; color:#888">Professional wrapping</div>
+                            </div>
+                            <div style="text-align:right">
+                                <div class="price">AED ${ser.price}</div>
+                                <button class="book-btn" onclick="placeOrder('${ser.name}', ${ser.price})">Book</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error("Error fetching shop:", err);
+            }
+        }
+
+        async function placeOrder(serviceName, price) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("Please login first to place an order!");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const orderData = {
+                shopId: shopId,
+                service: { name: serviceName, price: price },
+                pricing: { servicePrice: price, total: price },
+                pickupDetails: { type: 'customer_dropoff' },
+                payment: { method: 'cash' }
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert("🎉 Order placed successfully!");
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Error: " + result.message);
+                }
+            } catch (err) {
+                alert("Failed to connect to server.");
+            }
+        }
+
+        fetchShopDetails();
+    </script>
+</body>
+</html>

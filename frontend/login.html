@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6C63FF">
+    <title>Login - WrapIt</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 15px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 400px; width: 100%; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { background: #f5576c; font-size: 2em; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: #333; font-weight: bold; margin-bottom: 8px; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; }
+        .btn { width: 100%; padding: 12px; background: #f5576c; color: white; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #764ba2; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
+        .back-btn { color: #f5576c; text-decoration: none; font-weight: bold; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">← Back</a>
+        <div class="header">
+            <h1>🎁 WrapIt</h1>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    alert('Login successful!');
+                    window.location.href = 'index.html';
+                } else {
+                    document.getElementById('errorMessage').style.display = 'block';
+                    document.getElementById('errorMessage').textContent = data.message || 'Login failed';
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').textContent = 'Could not connect to server. Make sure backend is running!';
+                console.error('Error:', error);
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+</body>
+</html>
+

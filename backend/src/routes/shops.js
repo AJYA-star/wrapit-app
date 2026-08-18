@@ -9,7 +9,7 @@ const {
   addService,
   updateService,
   deleteService
-} = require('../controllers/shopController');
+} = require('../controllers/shopcontroller');
 const { protect } = require('../middleware/auth');
 
 // Public routes

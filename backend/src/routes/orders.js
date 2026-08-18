@@ -7,7 +7,7 @@ const {
     getOrderById, 
     updateOrderStatus, 
     cancelOrder 
-} = require('../controllers/orderController');
+} = require('../controllers/ordercontroller');
 const { protect } = require('../middleware/auth');
 
 router.use(protect); // This protects all routes below

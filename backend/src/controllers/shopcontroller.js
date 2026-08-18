@@ -1,4 +1,5 @@
 const Shop = require('../models/shop');
+const User = require('../models/user');
 
 exports.createShop = async (req, res, next) => {
   try {

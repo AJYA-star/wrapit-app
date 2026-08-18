@@ -30,22 +30,24 @@ exports.getOrderById = async (req, res, next) => {
 
 exports.updateOrderStatus = async (req, res, next) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
-    res.status(200).json({ success: true, order });
-  } catch (error) { next(error); }
-};
+    const order = await Order.findById(req.params.id);
 
-exports.getShopOrders = async (req, res, next) => {
-  try {
-    const orders = await Order.find().populate('customer', 'name email').sort({ createdAt: -1 });
-    res.status(200).json({ success: true, orders });
-  } catch (error) { next(error); }
-};
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
 
-// Add this placeholder for cancelOrder so the route doesn't crash
-exports.cancelOrder = async (req, res, next) => {
-  try {
-    const order = await Order.findByIdAndUpdate(req.params.id, { status: 'cancelled' }, { new: true });
+    // Security Check: Verify this shop owner owns the shop attached to the order
+    const shop = await Shop.findOne({ owner: req.user.id });
+    if (!shop || order.shop.toString() !== shop._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this order' });
+    }
+
+    // Update and save
+    order.status = req.body.status;
+    await order.save();
+
     res.status(200).json({ success: true, order });
-  } catch (error) { next(error); }
+  } catch (error) { 
+    next(error); 
+  }
 };

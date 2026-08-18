@@ -1,4 +1,4 @@
-const Order = require('../models/Order');
+const Order = require('../models/order');
 const Shop = require('../models/Shop');
 
 exports.createOrder = async (req, res, next) => {

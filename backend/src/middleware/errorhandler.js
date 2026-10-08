@@ -1,45 +1,53 @@
-// Global error handler
+// Global error handler (must be registered LAST in server.js)
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
-
-  // Log error for debugging
   console.error(err);
+
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Server Error';
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = { message, statusCode: 404 };
+    statusCode = 404;
+    message = 'Resource not found';
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    const message = `${field} already exists`;
-    error = { message, statusCode: 400 };
+    const field = Object.keys(err.keyValue || {})[0] || 'value';
+    statusCode = 400;
+    message = `${field} already exists`;
   }
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message);
-    error = { message, statusCode: 400 };
+    statusCode = 400;
+    message = Object.values(err.errors).map(val => val.message).join(', ');
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    message = 'Invalid token';
   }
-
   if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    message = 'Token expired';
   }
 
-  res.status(error.statusCode || 500).json({
+  // Malformed JSON body
+  if (err.type === 'entity.parse.failed') {
+    statusCode = 400;
+    message = 'Invalid JSON in request body';
+  }
+
+  // Never leak internals on unexpected errors in production
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    message = 'Server Error';
+  }
+
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Server Error',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    message
   });
 };
 

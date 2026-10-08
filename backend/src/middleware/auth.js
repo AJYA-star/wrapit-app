@@ -6,8 +6,7 @@ exports.protect = async (req, res, next) => {
   try {
     let token;
 
-    // Check if token exists in headers
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
     }
 
@@ -18,24 +17,29 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
 
-    // Get user from token
-    req.user = await User.findById(decoded.id);
-
-    if (!req.user) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'User not found'
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account has been deactivated'
+      });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Not authorized. Invalid token.'
+      message: 'Not authorized. Invalid or expired token.'
     });
   }
 };
@@ -43,7 +47,7 @@ exports.protect = async (req, res, next) => {
 // Restrict to specific roles
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'You do not have permission to perform this action'

@@ -7,12 +7,37 @@ const generateToken = (id) => {
   });
 };
 
+// Roles a person may choose for themselves. "admin" can only be set directly in the database.
+const SELF_ASSIGNABLE_ROLES = ['customer', 'shop_owner'];
+
+const publicUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role
+});
+
 exports.register = async (req, res, next) => {
   try {
     const { name, email, phone, password, role } = req.body;
 
-    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-    
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide name, email, phone and password'
+      });
+    }
+
+    if (role && !SELF_ASSIGNABLE_ROLES.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid account type'
+      });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email: String(email).toLowerCase() }, { phone }] });
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -34,13 +59,7 @@ exports.register = async (req, res, next) => {
       success: true,
       message: 'Registration successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      }
+      user: publicUser(user)
     });
   } catch (error) {
     next(error);
@@ -58,21 +77,19 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: String(email).toLowerCase() }).select('+password');
 
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    const isPasswordCorrect = await user.comparePassword(password);
-
-    if (!isPasswordCorrect) {
-      return res.status(401).json({
+    if (user.isActive === false) {
+      return res.status(403).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'This account has been deactivated'
       });
     }
 
@@ -82,13 +99,7 @@ exports.login = async (req, res, next) => {
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-      }
+      user: publicUser(user)
     });
   } catch (error) {
     next(error);
@@ -110,11 +121,15 @@ exports.getMe = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     const { name, phone, address } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, phone, address },
-      { new: true }
-    );
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (phone !== undefined) updates.phone = phone;
+    if (address !== undefined) updates.address = address;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true
+    });
     res.status(200).json({
       success: true,
       message: 'Profile updated',
@@ -128,6 +143,14 @@ exports.updateProfile = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide current and new password'
+      });
+    }
+
     const user = await User.findById(req.user.id).select('+password');
     const isPasswordCorrect = await user.comparePassword(currentPassword);
 
@@ -149,4 +172,3 @@ exports.changePassword = async (req, res, next) => {
     next(error);
   }
 };
-

@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+const ORDER_STATUSES = [
+  'pending',          // customer placed the order
+  'accepted',         // shop accepted it
+  'in_progress',      // shop is wrapping
+  'ready',            // wrapped, waiting for pickup / delivery
+  'out_for_delivery', // on its way back to the customer
+  'completed',        // customer has the gift
+  'cancelled',
+  'rejected'
+];
+
 const orderSchema = new mongoose.Schema({
   orderNumber: {
     type: String,
@@ -22,7 +33,7 @@ const orderSchema = new mongoose.Schema({
     description: String
   },
   giftImages: [String],
-  specialInstructions: String,
+  specialInstructions: { type: String, maxlength: 500 },
   pricing: {
     servicePrice: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
@@ -31,7 +42,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'rejected'],
+    enum: ORDER_STATUSES,
     default: 'pending'
   },
   pickupDetails: {
@@ -66,12 +77,14 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate order number before saving
-// Generate order number before saving (Modern Async Version)
-orderSchema.pre('save', async function() {
+// Generate a unique order number before saving
+orderSchema.pre('save', async function () {
   if (!this.orderNumber) {
-    this.orderNumber = `WRP${Date.now()}`;
+    const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+    this.orderNumber = `WRP${Date.now()}${random}`;
   }
 });
+
+orderSchema.statics.STATUSES = ORDER_STATUSES;
 
 module.exports = mongoose.model('Order', orderSchema);

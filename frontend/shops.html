@@ -95,8 +95,10 @@
     <div id="shopsContainer" class="shops-container"></div>
 
     <script>
+        
         let allShops = [];
-        const API_URL ='https://wrapit-backend-salar.onrender.com/api';
+        const container = document.getElementById('shopsContainer');
+        const API_URL ='https://wrapit-backend.onrender.com/api';
 
 
         async function loadShops() {

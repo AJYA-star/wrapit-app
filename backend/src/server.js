@@ -69,7 +69,16 @@ app.use('/api/shops', shopRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'success', message: 'WrapIt API is running!' });
+  res.json({ status: 'success', message: 'Hadiya API is running!' });
+});
+
+// Public settings the website needs to show prices (no secrets here)
+app.get('/api/config', (req, res) => {
+  const fee = Number(process.env.DELIVERY_FEE_PER_LEG);
+  res.json({
+    success: true,
+    deliveryFeePerLeg: Number.isFinite(fee) && fee >= 0 ? fee : 0
+  });
 });
 
 // Unknown API routes -> JSON 404

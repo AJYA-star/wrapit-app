@@ -3,7 +3,7 @@ const Shop = require('../models/shop');
 // Fields an owner is allowed to set/change themselves.
 // Things like isVerified, commission, rating, totalOrders and owner are NOT in this list.
 const OWNER_EDITABLE = [
-  'name', 'description', 'logo', 'images', 'phone', 'email',
+  'name', 'description', 'logo', 'images', 'email',
   'address', 'workingHours', 'bankDetails', 'isActive'
 ];
 const SERVICE_EDITABLE = ['name', 'description', 'price', 'duration', 'image', 'isAvailable'];
@@ -79,7 +79,7 @@ exports.getAllShops = async (req, res, next) => {
     }
 
     const shops = await Shop.find(query)
-      .select('-bankDetails -commission')
+      .select('-bankDetails -commission -phone')
       .populate('owner', 'name')
       .sort({ 'rating.average': -1 });
 
@@ -96,7 +96,7 @@ exports.getAllShops = async (req, res, next) => {
 exports.getShopById = async (req, res, next) => {
   try {
     const shop = await Shop.findById(req.params.id)
-      .select('-bankDetails -commission')
+      .select('-bankDetails -commission -phone')
       .populate('owner', 'name avatar');
 
     if (!shop || !shop.isActive || !shop.isVerified) {

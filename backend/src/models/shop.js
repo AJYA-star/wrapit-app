@@ -20,9 +20,9 @@ const shopSchema = new mongoose.Schema({
     default: 'default-shop.png'
   },
   images: [String],
+  // Shops do not publish a phone number: customers and shops talk through the in-app chat
   phone: {
-    type: String,
-    required: true
+    type: String
   },
   email: {
     type: String,

@@ -77,6 +77,11 @@ exports.createOrder = async (req, res, next) => {
     const pickupTime = parseDate(pickupDetails.scheduledTime);
     const deliveryTime = parseDate(deliveryDetails.scheduledTime);
     if (pickupTime === null || deliveryTime === null) return fail(res, 400, 'Invalid date/time');
+    if (!pickupTime) return fail(res, 400, 'Please choose a date and time');
+    // Allow a small margin so a time picked a moment ago is still accepted
+    if (pickupTime.getTime() < Date.now() - 5 * 60 * 1000) {
+      return fail(res, 400, 'The date and time must be in the future');
+    }
 
     const legs =
       (pickupDetails.type === 'shop_pickup' ? 1 : 0) +

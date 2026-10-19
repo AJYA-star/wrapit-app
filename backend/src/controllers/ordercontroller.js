@@ -62,11 +62,17 @@ exports.createOrder = async (req, res, next) => {
     if (!DELIVERY_TYPES.includes(deliveryDetails.type)) {
       return fail(res, 400, 'Please choose how you get the gift back');
     }
-    if (pickupDetails.type === 'shop_pickup' && !text(pickupDetails.address)) {
-      return fail(res, 400, 'A pickup address is required');
+    const MIN_ADDRESS = 8;
+    if (pickupDetails.type === 'shop_pickup' && (text(pickupDetails.address) || '').length < MIN_ADDRESS) {
+      return fail(res, 400, 'Please enter the full pickup address (building, street, area)');
     }
-    if (deliveryDetails.type === 'shop_delivery' && !text(deliveryDetails.address)) {
-      return fail(res, 400, 'A delivery address is required');
+    if (deliveryDetails.type === 'shop_delivery' && (text(deliveryDetails.address) || '').length < MIN_ADDRESS) {
+      return fail(res, 400, 'Please enter the full delivery address (building, street, area)');
+    }
+    const phoneDigits = (value) => String(value || '').replace(/\D/g, '').length;
+    const contact = text(pickupDetails.contactPhone, 30) || req.user.phone;
+    if (phoneDigits(contact) < 7) {
+      return fail(res, 400, 'Please enter a valid contact phone number');
     }
 
     const method = payment.method || 'cash';

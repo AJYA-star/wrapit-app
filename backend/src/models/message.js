@@ -9,15 +9,16 @@ const messageSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  // the logged-in user who wrote it (empty for the automatic assistant)
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
   },
-  // 'customer' or 'shop' - stored so the chat can label messages without extra lookups
+  // 'customer', 'shop', or 'assistant' (the automatic Hadiya Assistant) - stored so the chat can
+  // label messages without extra lookups
   senderRole: {
     type: String,
-    enum: ['customer', 'shop'],
+    enum: ['customer', 'shop', 'assistant'],
     required: true
   },
   senderName: { type: String, trim: true },

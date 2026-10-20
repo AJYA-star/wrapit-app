@@ -55,6 +55,8 @@ const shopSchema = new mongoose.Schema({
     saturday: { open: String, close: String, isClosed: { type: Boolean, default: false } },
     sunday: { open: String, close: String, isClosed: { type: Boolean, default: false } }
   },
+  // the automatic Hadiya Assistant answers customers first; the owner can switch it off
+  aiReplies: { type: Boolean, default: true },
   rating: {
     average: { type: Number, default: 0, min: 0, max: 5 },
     count: { type: Number, default: 0 }

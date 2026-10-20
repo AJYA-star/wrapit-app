@@ -63,6 +63,11 @@ const orderSchema = new mongoose.Schema({
     transactionId: String,
     paidAt: Date
   },
+  // when the customer / the shop last opened this order's chat (used for the unread badges)
+  chatRead: {
+    customer: Date,
+    shop: Date
+  },
   timeline: [{
     status: String,
     timestamp: { type: Date, default: Date.now },

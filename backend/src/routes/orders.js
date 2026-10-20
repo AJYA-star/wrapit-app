@@ -8,7 +8,7 @@ const {
   updateOrderStatus,
   cancelOrder
 } = require('../controllers/ordercontroller');
-const { getMessages, sendMessage } = require('../controllers/messagecontroller');
+const { getMessages, sendMessage, getUnread } = require('../controllers/messagecontroller');
 const rateLimit = require('express-rate-limit');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -26,6 +26,7 @@ router.use(protect); // everything below requires login
 router.post('/', restrictTo('customer', 'admin'), createOrder);
 router.get('/my-orders', getMyOrders);
 router.get('/shop-orders', restrictTo('shop_owner', 'admin'), getShopOrders);
+router.get('/unread', getUnread);
 router.get('/:id/messages', getMessages);
 router.post('/:id/messages', sendLimiter, sendMessage);
 router.get('/:id', getOrderById);

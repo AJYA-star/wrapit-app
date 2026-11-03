@@ -39,7 +39,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
 
 // Rate limiting
 app.use('/api', rateLimit({

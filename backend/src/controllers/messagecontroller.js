@@ -3,6 +3,7 @@ const Order = require('../models/order');
 const Shop = require('../models/shop');
 const Message = require('../models/message');
 const assistant = require('../services/assistant');
+const { notifyUser } = require('../services/notify');
 
 const fail = (res, status, message) =>
   res.status(status).json({ success: false, message });
@@ -71,6 +72,9 @@ async function answerOnce(orderId) {
     senderName: 'Hadiya Assistant',
     text
   });
+
+  // Phone alert for the customer: the automatic assistant answered
+  notifyUser(order.customer, 'chat_message', { orderId: order._id, from: 'Hadiya Assistant', text });
 }
 
 async function assistantReply(orderId) {
@@ -156,6 +160,10 @@ exports.sendMessage = async (req, res, next) => {
         createdAt: message.createdAt
       }
     });
+
+    // Phone alert for the other person in the chat (the owner is alerted even when the assistant answers first)
+    const recipient = chat.side === 'customer' ? (chat.shop && chat.shop.owner) : chat.order.customer;
+    notifyUser(recipient, 'chat_message', { orderId: chat.order._id, from: req.user.name, text });
 
     // After answering the request: let the assistant reply first to a customer's message
     if (chat.side === 'customer' && assistantActiveFor(chat.shop)) {

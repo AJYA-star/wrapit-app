@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/order');
 const Shop = require('../models/shop');
 const Review = require('../models/review');
+const { notifyUser } = require('../services/notify');
 
 // Which status can follow which. The shop owner can only follow this map.
 const TRANSITIONS = {
@@ -130,6 +131,9 @@ exports.createOrder = async (req, res, next) => {
     });
 
     res.status(201).json({ success: true, order });
+
+    // phone alert for the shop owner (after answering the customer; never blocks the order)
+    notifyUser(shop.owner, 'new_order', { orderId: order._id, service: service.name, total: order.pricing.total });
   } catch (error) {
     next(error);
   }
@@ -225,6 +229,9 @@ exports.updateOrderStatus = async (req, res, next) => {
     await order.save();
 
     res.status(200).json({ success: true, order });
+
+    // phone alert for the customer
+    notifyUser(order.customer, 'order_status', { orderId: order._id, status: newStatus });
   } catch (error) {
     next(error);
   }
@@ -276,6 +283,10 @@ exports.cancelOrder = async (req, res, next) => {
     await order.save();
 
     res.status(200).json({ success: true, order });
+
+    // phone alert for the shop owner
+    const shop = await Shop.findById(order.shop).select('owner');
+    if (shop) notifyUser(shop.owner, 'order_cancelled_by_customer', { orderId: order._id, service: order.service && order.service.name });
   } catch (error) {
     next(error);
   }

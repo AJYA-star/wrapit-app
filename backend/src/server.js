@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const shopRoutes = require('./routes/shops');
 const orderRoutes = require('./routes/orders');
+const pushRoutes = require('./routes/push');
 const errorHandler = require('./middleware/errorhandler');
 
 if (!process.env.JWT_SECRET) {
@@ -67,6 +68,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/shops', shopRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/push', pushRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'success', message: 'Hadiya API is running!' });

@@ -6,7 +6,11 @@ const MAX_DEVICES_PER_USER = 8;
 
 // GET /api/push/key  (public) - the browser needs the public key to register
 exports.getKey = (req, res) => {
-  if (!webpush.isConfigured()) return res.status(200).json({ success: true, enabled: false });
+  if (!webpush.isConfigured()) {
+    // names only (never values): tells the site owner which Render variable is missing
+    const missing = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY'].filter((name) => !process.env[name]);
+    return res.status(200).json({ success: true, enabled: false, missing });
+  }
   res.status(200).json({ success: true, enabled: true, publicKey: process.env.VAPID_PUBLIC_KEY });
 };
 

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('../models/order');
 const Shop = require('../models/shop');
+const Review = require('../models/review');
 
 // Which status can follow which. The shop owner can only follow this map.
 const TRANSITIONS = {
@@ -140,7 +141,13 @@ exports.getMyOrders = async (req, res, next) => {
       .populate('shop', 'name')
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ success: true, orders });
+    // attach the customer's own review (if any) so the page can show it instead of the "Rate" button
+    const reviews = await Review.find({ order: { $in: orders.map((o) => o._id) } });
+    const byOrder = {};
+    reviews.forEach((r) => { byOrder[r.order.toString()] = { rating: r.rating, comment: r.comment || '' }; });
+    const list = orders.map((o) => Object.assign(o.toObject(), { review: byOrder[o._id.toString()] || null }));
+
+    res.status(200).json({ success: true, orders: list });
   } catch (error) {
     next(error);
   }

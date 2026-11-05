@@ -12,6 +12,7 @@ const {
   updateService,
   deleteService
 } = require('../controllers/shopcontroller');
+const { getShopReviews } = require('../controllers/reviewcontroller');
 const { protect, restrictTo } = require('../middleware/auth');
 
 // Public routes
@@ -21,6 +22,7 @@ router.get('/', getAllShops);
 router.get('/mine', protect, restrictTo('shop_owner', 'admin'), getMyShop);
 router.post('/', protect, restrictTo('shop_owner', 'admin'), createShop);
 
+router.get('/:id/reviews', getShopReviews);
 router.get('/:id', getShopById);
 router.put('/:id', protect, updateShop);
 router.put('/:id/verify', protect, restrictTo('admin'), verifyShop);

@@ -8,6 +8,7 @@ const {
   updateOrderStatus,
   cancelOrder
 } = require('../controllers/ordercontroller');
+const { createReview } = require('../controllers/reviewcontroller');
 const { getMessages, sendMessage, getUnread } = require('../controllers/messagecontroller');
 const rateLimit = require('express-rate-limit');
 const { protect, restrictTo } = require('../middleware/auth');
@@ -29,6 +30,7 @@ router.get('/shop-orders', restrictTo('shop_owner', 'admin'), getShopOrders);
 router.get('/unread', getUnread);
 router.get('/:id/messages', getMessages);
 router.post('/:id/messages', sendLimiter, sendMessage);
+router.post('/:id/review', restrictTo('customer'), createReview);
 router.get('/:id', getOrderById);
 router.put('/:id/status', restrictTo('shop_owner', 'admin'), updateOrderStatus);
 router.put('/:id/cancel', cancelOrder);

@@ -34,6 +34,14 @@ const parseDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
+// A shop's commission rate in percent (20 unless the admin set something else)
+const rateOf = (shop) => {
+  const r = shop && Number(shop.commission);
+  return Number.isFinite(r) && r >= 0 && r <= 100 ? r : 20;
+};
+
 // Delivery fee per leg (pickup leg + return leg) that the shop handles. Set DELIVERY_FEE_PER_LEG in .env (AED).
 const deliveryFeePerLeg = () => {
   const fee = Number(process.env.DELIVERY_FEE_PER_LEG);
@@ -96,6 +104,10 @@ exports.createOrder = async (req, res, next) => {
       (deliveryDetails.type === 'shop_delivery' ? 1 : 0);
     const servicePrice = service.price;
     const deliveryFee = legs * deliveryFeePerLeg();
+    const total = servicePrice + deliveryFee;
+    // Hadiya's commission is a percentage of the service price (not of the delivery fee)
+    const commissionRate = rateOf(shop);
+    const commission = round2(servicePrice * commissionRate / 100);
 
     const order = await Order.create({
       customer: req.user.id,
@@ -111,7 +123,10 @@ exports.createOrder = async (req, res, next) => {
         servicePrice,
         deliveryFee,
         discount: 0,
-        total: servicePrice + deliveryFee
+        total,
+        commissionRate,
+        commission,
+        shopEarnings: round2(total - commission)
       },
       pickupDetails: {
         type: pickupDetails.type,
@@ -287,6 +302,85 @@ exports.cancelOrder = async (req, res, next) => {
     // phone alert for the shop owner
     const shop = await Shop.findById(order.shop).select('owner');
     if (shop) notifyUser(shop.owner, 'order_cancelled_by_customer', { orderId: order._id, service: order.service && order.service.name });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ---- Admin only: how many orders, how much was sold, how much commission Hadiya earned and is owed ----
+
+// First moment of the current month in UAE time (UTC+4), used for the "this month" view
+const startOfThisMonthUAE = () => {
+  const dubai = new Date(Date.now() + 4 * 3600 * 1000);
+  return new Date(Date.UTC(dubai.getUTCFullYear(), dubai.getUTCMonth(), 1) - 4 * 3600 * 1000);
+};
+
+exports.adminSummary = async (req, res, next) => {
+  try {
+    const period = req.query.period === 'month' ? 'month' : 'all';
+    const since = period === 'month' ? startOfThisMonthUAE() : null;
+
+    const orders = await Order.find().select('shop status pricing commissionPaid createdAt').lean();
+    const shopIds = [...new Set(orders.map((o) => String(o.shop)))];
+    const shops = await Shop.find({ _id: { $in: shopIds } }).select('name nameAr commission').lean();
+    const shopById = {};
+    shops.forEach((s) => { shopById[String(s._id)] = s; });
+
+    // Orders placed before commission was recorded get it worked out from the shop's rate
+    const commissionOf = (o) => {
+      const p = o.pricing || {};
+      if (Number.isFinite(p.commission)) return p.commission;
+      return round2((p.servicePrice || 0) * rateOf(shopById[String(o.shop)]) / 100);
+    };
+
+    const byStatus = {};
+    const rows = {};
+    const totals = { orders: 0, completed: 0, sales: 0, commission: 0, owed: 0 };
+
+    orders.forEach((o) => {
+      const id = String(o.shop);
+      const shop = shopById[id] || {};
+      const row = rows[id] || (rows[id] = {
+        shopId: id, name: shop.name || 'Deleted shop', nameAr: shop.nameAr || '',
+        rate: rateOf(shop), orders: 0, completed: 0, sales: 0, commission: 0, owed: 0
+      });
+      const done = o.status === 'completed';
+      const inPeriod = !since || new Date(o.createdAt) >= since;
+
+      if (inPeriod) {
+        byStatus[o.status] = (byStatus[o.status] || 0) + 1;
+        row.orders += 1; totals.orders += 1;
+        if (done) {
+          const c = commissionOf(o);
+          row.completed += 1; totals.completed += 1;
+          row.sales += (o.pricing && o.pricing.total) || 0; totals.sales += (o.pricing && o.pricing.total) || 0;
+          row.commission += c; totals.commission += c;
+        }
+      }
+      // what the shop still owes is always counted over all time, so nothing is forgotten
+      if (done && !o.commissionPaid) { const c = commissionOf(o); row.owed += c; totals.owed += c; }
+    });
+
+    const list = Object.values(rows).map((r) => Object.assign(r, {
+      sales: round2(r.sales), commission: round2(r.commission), owed: round2(r.owed)
+    })).sort((a, b) => b.owed - a.owed || b.sales - a.sales);
+    ['sales', 'commission', 'owed'].forEach((k) => { totals[k] = round2(totals[k]); });
+
+    res.status(200).json({ success: true, period, totals, byStatus, shops: list });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// The admin received a shop's commission: mark all of that shop's completed, unpaid orders as settled
+exports.settleShop = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.shopId)) return fail(res, 404, 'Shop not found');
+    const result = await Order.updateMany(
+      { shop: req.params.shopId, status: 'completed', commissionPaid: { $ne: true } },
+      { $set: { commissionPaid: true, commissionPaidAt: new Date() } }
+    );
+    res.status(200).json({ success: true, settled: result.modifiedCount !== undefined ? result.modifiedCount : result.nModified || 0 });
   } catch (error) {
     next(error);
   }

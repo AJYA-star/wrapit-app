@@ -39,9 +39,13 @@ exports.register = async (req, res, next) => {
     const existingUser = await User.findOne({ $or: [{ email: String(email).toLowerCase() }, { phone }] });
 
     if (existingUser) {
+      // Say which detail is already used, so the person knows what to change
+      const sameEmail = existingUser.email === String(email).toLowerCase();
       return res.status(400).json({
         success: false,
-        message: 'User already exists'
+        message: sameEmail
+          ? 'An account with this email already exists'
+          : 'An account with this phone number already exists'
       });
     }
 

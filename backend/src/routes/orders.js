@@ -6,7 +6,9 @@ const {
   getShopOrders,
   getOrderById,
   updateOrderStatus,
-  cancelOrder
+  cancelOrder,
+  adminSummary,
+  settleShop
 } = require('../controllers/ordercontroller');
 const { createReview } = require('../controllers/reviewcontroller');
 const { getMessages, sendMessage, getUnread } = require('../controllers/messagecontroller');
@@ -26,6 +28,8 @@ router.use(protect); // everything below requires login
 
 router.post('/', restrictTo('customer', 'admin'), createOrder);
 router.get('/my-orders', getMyOrders);
+router.get('/admin/summary', restrictTo('admin'), adminSummary);
+router.put('/admin/settle/:shopId', restrictTo('admin'), settleShop);
 router.get('/shop-orders', restrictTo('shop_owner', 'admin'), getShopOrders);
 router.get('/unread', getUnread);
 router.get('/:id/messages', getMessages);

@@ -38,8 +38,15 @@ const orderSchema = new mongoose.Schema({
     servicePrice: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
-    total: { type: Number, required: true }
+    total: { type: Number, required: true },
+    // Hadiya's cut, fixed when the order is placed (later rate changes do not touch old orders)
+    commissionRate: Number,      // percent of the service price
+    commission: Number,          // AED Hadiya takes
+    shopEarnings: Number         // AED the shop keeps (total minus commission)
   },
+  // cash orders: the shop collects the money, then pays Hadiya its commission
+  commissionPaid: { type: Boolean, default: false },
+  commissionPaidAt: Date,
   status: {
     type: String,
     enum: ORDER_STATUSES,

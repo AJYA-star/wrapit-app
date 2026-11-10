@@ -142,7 +142,7 @@ exports.createOrder = async (req, res, next) => {
 exports.getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user.id })
-      .populate('shop', 'name')
+      .populate('shop', 'name nameAr')
       .sort({ createdAt: -1 });
 
     // attach the customer's own review (if any) so the page can show it instead of the "Rate" button
@@ -163,7 +163,7 @@ exports.getOrderById = async (req, res, next) => {
 
     const order = await Order.findById(req.params.id)
       .populate('customer', 'name phone')
-      .populate('shop', 'name address owner');
+      .populate('shop', 'name nameAr address owner');
 
     if (!order) return fail(res, 404, 'Order not found');
 
@@ -249,7 +249,7 @@ exports.getShopOrders = async (req, res, next) => {
 
     const orders = await Order.find(filter)
       .populate('customer', 'name phone')
-      .populate('shop', 'name')
+      .populate('shop', 'name nameAr')
       .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, orders });

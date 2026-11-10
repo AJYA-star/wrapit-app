@@ -3,7 +3,7 @@ const Shop = require('../models/shop');
 // Fields an owner is allowed to set/change themselves.
 // Things like isVerified, commission, rating, totalOrders and owner are NOT in this list.
 const OWNER_EDITABLE = [
-  'name', 'description', 'logo', 'images', 'email',
+  'name', 'description', 'descriptionAr', 'logo', 'images', 'email',
   'address', 'workingHours', 'bankDetails', 'isActive', 'aiReplies'
 ];
 const SERVICE_EDITABLE = ['name', 'description', 'price', 'duration', 'image', 'isAvailable'];

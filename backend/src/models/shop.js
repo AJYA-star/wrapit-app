@@ -15,6 +15,12 @@ const shopSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide shop description']
   },
+  // Optional Arabic version of the description (shown to customers who use the site in Arabic)
+  descriptionAr: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
   logo: {
     type: String,
     default: 'default-shop.png'

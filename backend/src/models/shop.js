@@ -47,6 +47,9 @@ const shopSchema = new mongoose.Schema({
   services: [{
     name: { type: String, required: true }, // e.g., "Basic Wrapping", "Premium Wrapping"
     description: String,
+    // Optional Arabic versions, shown to customers who use the site in Arabic
+    nameAr: { type: String, trim: true, maxlength: 80 },
+    descriptionAr: { type: String, trim: true, maxlength: 200 },
     price: { type: Number, required: true },
     duration: Number, // in minutes
     image: String,

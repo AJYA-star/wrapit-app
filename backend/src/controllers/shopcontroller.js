@@ -6,7 +6,7 @@ const OWNER_EDITABLE = [
   'name', 'description', 'descriptionAr', 'logo', 'images', 'email',
   'address', 'workingHours', 'bankDetails', 'isActive', 'aiReplies'
 ];
-const SERVICE_EDITABLE = ['name', 'description', 'price', 'duration', 'image', 'isAvailable'];
+const SERVICE_EDITABLE = ['name', 'nameAr', 'description', 'descriptionAr', 'price', 'duration', 'image', 'isAvailable'];
 
 const pick = (obj, keys) =>
   keys.reduce((acc, key) => {

@@ -82,7 +82,7 @@ const shopSchema = new mongoose.Schema({
   },
   commission: {
     type: Number,
-    default: 20 // 20% commission
+    default: 15 // 15% launch commission
   },
   isVerified: {
     type: Boolean,

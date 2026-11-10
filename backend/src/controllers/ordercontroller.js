@@ -36,10 +36,10 @@ const parseDate = (value) => {
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
-// A shop's commission rate in percent (20 unless the admin set something else)
+// A shop's commission rate in percent (15 unless the admin set something else)
 const rateOf = (shop) => {
   const r = shop && Number(shop.commission);
-  return Number.isFinite(r) && r >= 0 && r <= 100 ? r : 20;
+  return Number.isFinite(r) && r >= 0 && r <= 100 ? r : 15;
 };
 
 // Delivery fee per leg (pickup leg + return leg) that the shop handles. Set DELIVERY_FEE_PER_LEG in .env (AED).

@@ -30,6 +30,11 @@ const EVENTS = {
     body: (ar ? STATUS_AR : STATUS_EN)[d.status] || (ar ? 'تم تحديث طلبك' : 'Your order was updated'),
     url: 'my-orders.html', tag: 'order-' + d.orderId
   }),
+  shop_approved: (d, ar) => ({
+    title: ar ? 'تمت الموافقة على متجرك 🎉' : 'Your shop is approved 🎉',
+    body: ar ? 'يمكن للعملاء الآن العثور عليك وحجز خدماتك.' : 'Customers can now find and book you.',
+    url: 'shop-owner-dashboard.html', tag: 'shop-approved'
+  }),
   chat_message: (d, ar) => ({
     title: (ar ? 'رسالة جديدة من ' : 'New message from ') + clip(d.from || (ar ? 'المحادثة' : 'the chat'), 40),
     body: clip(d.text, 90), url: 'chat.html?order=' + d.orderId, tag: 'chat-' + d.orderId

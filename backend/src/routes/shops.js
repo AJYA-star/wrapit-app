@@ -7,6 +7,7 @@ const {
   getShopById,
   updateShop,
   verifyShop,
+  adminListShops,
   deleteShop,
   addService,
   updateService,
@@ -21,6 +22,8 @@ router.get('/', getAllShops);
 // Owner routes - must come BEFORE '/:id' so "mine" is not treated as an id
 router.get('/mine', protect, restrictTo('shop_owner', 'admin'), getMyShop);
 router.post('/', protect, restrictTo('shop_owner', 'admin'), createShop);
+
+router.get('/admin/all', protect, restrictTo('admin'), adminListShops);
 
 router.get('/:id/reviews', getShopReviews);
 router.get('/:id', getShopById);

@@ -1,4 +1,5 @@
 const Shop = require('../models/shop');
+const { notifyUser } = require('../services/notify');
 
 // Fields an owner is allowed to set/change themselves.
 // Things like isVerified, commission, rating, totalOrders and owner are NOT in this list.
@@ -189,6 +190,23 @@ exports.verifyShop = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Shop not found' });
     }
     res.status(200).json({ success: true, shop });
+    // tell the owner on their phone (after answering; never blocks the approval)
+    if (shop.isVerified) notifyUser(shop.owner, 'shop_approved', { shopId: shop._id });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin only: every shop with its owner's contact details, waiting ones first.
+// Pictures are left out to keep the list light.
+exports.adminListShops = async (req, res, next) => {
+  try {
+    const shops = await Shop.find()
+      .select('-bankDetails -images -logo -commission')
+      .populate('owner', 'name email phone')
+      .sort({ isVerified: 1, createdAt: -1 })
+      .lean();
+    res.status(200).json({ success: true, count: shops.length, shops });
   } catch (error) {
     next(error);
   }
